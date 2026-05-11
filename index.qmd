@@ -10,9 +10,9 @@ Our main focus is to understand how xG is related to goals scored, goals concede
 
 ## Team Members
 
--   Necati Berkay Vural
--   Ömer Faruk Okur
--   Ulaş Utku Bedel
+- [Necati Berkay Vural](https://nberkayvural.github.io/emu430-spring2026-nberkayvural/)
+- [Ömer Faruk Okur](https://github.com/emu-hacettepe-analytics/emu430-spring2026-omerokur06min)
+- [Ulaş Utku Bedel](https://github.com/emu-hacettepe-analytics/emu430-spring2026-ulasbedel)
 
 ## Key Takeaways
 
