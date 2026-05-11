@@ -1,0 +1,27 @@
+---
+title: "Super Lig xG Analysis"
+---
+
+## Project Overview
+
+This project analyzes the relationship between expected goals and match performance indicators in the Turkish Süper Lig.
+
+Our main focus is to understand how xG is related to goals scored, goals conceded, shots on target, and points per game.
+
+## Team Members
+
+-   Necati Berkay Vural
+-   Ömer Faruk Okur
+-   Ulaş Utku Bedel
+
+## Key Takeaways
+
+-   Expected Goals is a useful metric for measuring the quality of chances created by teams.
+
+-   xG is positively related to actual goals scored, but the relationship is not perfect.
+
+-   xGA is useful for evaluating defensive performance because it is related to goals conceded.
+
+-   
+
+    ## Differences between xG and actual goals can be explained by finishing quality, goalkeeper performance, tactical factors, and randomness.

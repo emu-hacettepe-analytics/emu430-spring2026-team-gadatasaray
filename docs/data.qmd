@@ -1,0 +1,154 @@
+---
+title: "Data"
+---
+
+## Data Description
+
+Our dataset was collected from FootyStats and includes Turkish Süper Lig team-level statistics from the 2018/2019 season to the 2025/2026 season. Since our project focuses on expected goals, we selected the seasons and variables that include xG-related information.
+
+Each row in the dataset represents one team in one season. Therefore, our unit of analysis is team-season level.
+
+The main goal of this project is to analyze the relationship between expected goals and different match performance indicators such as goals scored, goals conceded, shots on target, and points per game.
+
+```{r}
+#| label: load-libraries
+#| echo: true
+#| code-fold: true
+#| warning: false
+#| message: false
+
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+```
+```{r}
+#| label: import-raw-csv-files
+#| echo: true
+#| code-fold: true
+#| warning: false
+#| message: false
+
+s18 <- read_csv("data/raw/turkey-super-lig-teams-2018-to-2019-stats.csv")
+s19 <- read_csv("data/raw/turkey-super-lig-teams-2019-to-2020-stats.csv")
+s20 <- read_csv("data/raw/turkey-super-lig-teams-2020-to-2021-stats.csv")
+s21 <- read_csv("data/raw/turkey-super-lig-teams-2021-to-2022-stats.csv")
+s22 <- read_csv("data/raw/turkey-super-lig-teams-2022-to-2023-stats.csv")
+s23 <- read_csv("data/raw/turkey-super-lig-teams-2023-to-2024-stats.csv")
+s24 <- read_csv("data/raw/turkey-super-lig-teams-2024-to-2025-stats.csv")
+s25 <- read_csv("data/raw/turkey-super-lig-teams-2025-to-2026-stats.csv")
+```
+We imported each raw CSV file separately because the dataset was downloaded season by season from FootyStats.
+
+```{r}
+#| label: combine-seasons
+#| echo: true
+#| code-fold: true
+
+all_data <- bind_rows(
+  s18, s19, s20, s21, s22, s23, s24, s25
+)
+
+nrow(all_data)
+ncol(all_data)
+```
+After importing all seasons, we combined them into a single dataset using `bind_rows()`. This allows us to analyze the selected seasons together instead of analyzing each season separately.
+---
+```{r}
+#| label: select-core-variables
+#| echo: true
+#| code-fold: true
+
+core_data <- all_data %>%
+  select(
+    common_name,
+    season,
+    league_position,
+    points_per_game,
+    average_possession,
+    shots,
+    shots_on_target,
+    goals_scored_per_match,
+    goals_conceded_per_match,
+    xg_for_avg_overall,
+    xg_against_avg_overall
+  )
+
+nrow(core_data)
+ncol(core_data)
+names(core_data)
+```
+We selected the variables that are most relevant for our analysis. The selected variables include team identity, season, league position, points per game, possession, shooting statistics, goals, and expected goals.
+
+```{r}
+#| label: missing-value-check
+#| echo: true
+#| code-fold: true
+
+missing_summary <- core_data %>%
+  summarise(across(everything(), ~ sum(is.na(.))))
+
+
+```
+We checked missing values in the selected variables. This step is important because missing values can affect correlation calculations and visualizations.
+
+```{r}
+#| label: duplicate-check
+#| echo: true
+#| code-fold: true
+
+duplicate_check <- core_data %>%
+  count(common_name, season) %>%
+  filter(n > 1)
+```
+We checked whether the same team-season observation appears more than once. Duplicate rows could bias the analysis, especially correlation results.
+
+```{r}
+#| label: numeric-conversion
+#| echo: true
+#| code-fold: true
+
+core_data_cleaned <- core_data %>%
+  mutate(
+    league_position = as.numeric(league_position),
+    points_per_game = as.numeric(points_per_game),
+    average_possession = as.numeric(average_possession),
+    shots = as.numeric(shots),
+    shots_on_target = as.numeric(shots_on_target),
+    goals_scored_per_match = as.numeric(goals_scored_per_match),
+    goals_conceded_per_match = as.numeric(goals_conceded_per_match),
+    xg_for_avg_overall = as.numeric(xg_for_avg_overall),
+    xg_against_avg_overall = as.numeric(xg_against_avg_overall)
+  )
+```
+We converted the selected numerical variables into numeric format. This makes sure that correlation calculations and plots work correctly.
+
+```{r}
+#| label: create-derived-variables
+#| echo: true
+#| code-fold: true
+
+core_data_cleaned <- core_data_cleaned %>%
+  mutate(
+    goals_minus_xg = goals_scored_per_match - xg_for_avg_overall,
+    xga_minus_goals_conceded = xg_against_avg_overall - goals_conceded_per_match,
+    xg_difference = xg_for_avg_overall - xg_against_avg_overall,
+    goal_difference_per_match = goals_scored_per_match - goals_conceded_per_match
+  )
+```
+We created additional variables to compare expected and actual performance. `goals_minus_xg` shows whether a team scored more or less than expected. `xga_minus_goals_conceded` compares expected goals against and actual goals conceded. We also calculated xG difference and actual goal difference per match.
+
+```{r}
+#| label: save-cleaned-data
+#| echo: true
+#| code-fold: true
+
+save(
+  core_data_cleaned,
+  file = "data/processed/super_lig_xg_core_data_cleaned.RData"
+)
+```
+The cleaned dataset can be downloaded here:
+
+[Download cleaned xG dataset](data/processed/super_lig_xg_core_data_cleaned.RData)
