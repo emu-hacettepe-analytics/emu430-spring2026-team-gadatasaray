@@ -9,62 +9,56 @@ format:
 ---
 
 {r setup, message=FALSE, warning=FALSE}
+#| label: master-data-loading
+#| echo: true
+#| code-fold: true
+
+# TÜM PROJE İÇİN GEREKLİ ORTAK KÜTÜPHANELER
 library(readr)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(knitr)
 
-read_season <- function(file) {
-  possible_paths <- c(
-    file,
-    paste0("data/", file),
-    paste0("data/raw/", file),
-    paste0("../data/", file),
-    paste0("../data/raw/", file)
-  )
-  
-  existing_path <- possible_paths[file.exists(possible_paths)][1]
-  
-  if (is.na(existing_path)) {
-    stop(paste("File not found:", file))
-  }
-  
-  read_csv(existing_path, show_col_types = FALSE)
-}
+# BÜTÜN CSV DOSYALARININ TEK MERKEZDEN OKUNMASI
+s18 <- read_csv("turkey-super-lig-teams-2018-to-2019-stats.csv", show_col_types = FALSE)
+s19 <- read_csv("turkey-super-lig-teams-2019-to-2020-stats.csv", show_col_types = FALSE)
+s20 <- read_csv("turkey-super-lig-teams-2020-to-2021-stats.csv", show_col_types = FALSE)
+s21 <- read_csv("turkey-super-lig-teams-2021-to-2022-stats.csv", show_col_types = FALSE)
+s22 <- read_csv("turkey-super-lig-teams-2022-to-2023-stats.csv", show_col_types = FALSE)
+s23 <- read_csv("turkey-super-lig-teams-2023-to-2024-stats.csv", show_col_types = FALSE)
+s24 <- read_csv("turkey-super-lig-teams-2024-to-2025-stats.csv", show_col_types = FALSE)
+s25 <- read_csv("turkey-super-lig-teams-2025-to-2026-stats.csv", show_col_types = FALSE)
 
-s18 <- read_season("turkey-super-lig-teams-2018-to-2019-stats.csv")
-s19 <- read_season("turkey-super-lig-teams-2019-to-2020-stats.csv")
-s20 <- read_season("turkey-super-lig-teams-2020-to-2021-stats.csv")
-s21 <- read_season("turkey-super-lig-teams-2021-to-2022-stats.csv")
-s22 <- read_season("turkey-super-lig-teams-2022-to-2023-stats.csv")
-s23 <- read_season("turkey-super-lig-teams-2023-to-2024-stats.csv")
-s24 <- read_season("turkey-super-lig-teams-2024-to-2025-stats.csv")
-s25 <- read_season("turkey-super-lig-teams-2025-to-2026-stats.csv")
-
-superlig_data <- bind_rows(
-  s18, s19, s20, s21,
-  s22, s23, s24, s25
-) %>%
+# ORTAK VERİ SETİNİN OLUŞTURULMASI
+superlig_data <- bind_rows(s18, s19, s20, s21, s22, s23, s24, s25) %>%
   mutate(
     season_short = paste0(substr(season, 3, 4), "-", substr(season, 8, 9)),
-    goals_minus_xg = goals_scored_per_match - xg_for_avg_overall,
     finishing_diff = goals_scored_per_match - xg_for_avg_overall,
     total_xg = xg_for_avg_overall * matches_played,
-    shot_quality = total_xg / shots,
-    shots_per_match = shots / matches_played,
-    xg_per_shot = xg_for_avg_overall / shots_per_match
+    shot_quality = total_xg / shots
   )
 
-Section 1 – Understanding Expected Goals and Match Performance
+# BERKAY'IN KODLARI İÇİN KÖPRÜ (Eksik .RData dosyası yerine CSV'leri kullanıyoruz)
+core_data_cleaned <- superlig_data %>%
+  mutate(goals_minus_xg = goals_scored_per_match - xg_for_avg_overall)
+
+
+## Section 1 – Understanding Expected Goals and Match Performance
 
 Expected Goals, commonly known as xG, is a football analytics metric that estimates the quality of chances created by a team. It does not directly measure the final score. Instead, it shows how many goals a team would be expected to score based on the quality of its chances.
 
 In this section, we analyze how xG is related to different performance indicators in the Turkish Süper Lig.
 
-1.1 Correlation Between xG and Performance Indicators
+### 1.1 Correlation Between xG and Performance Indicators
 
-{r}
+Before focusing only on goals, we first compare the relationship between xG and different performance indicators. This helps us understand whether xG is more closely related to actual goals, shooting performance, or overall league performance.
+
+{r message=FALSE, warning=FALSE}
+#| label: xg-correlation-comparison
+#| echo: true
+#| code-fold: true
+
 xg_correlations <- tibble::tibble(
   relationship = c(
     "xG vs Goals Scored",
@@ -73,16 +67,33 @@ xg_correlations <- tibble::tibble(
     "xG vs Points per Game"
   ),
   correlation = c(
-    cor(superlig_data$xg_for_avg_overall, superlig_data$goals_scored_per_match, use = "complete.obs"),
-    cor(superlig_data$xg_for_avg_overall, superlig_data$shots_on_target, use = "complete.obs"),
-    cor(superlig_data$xg_for_avg_overall, superlig_data$shots, use = "complete.obs"),
-    cor(superlig_data$xg_for_avg_overall, superlig_data$points_per_game, use = "complete.obs")
+    cor(core_data_cleaned$xg_for_avg_overall,
+        core_data_cleaned$goals_scored_per_match,
+        use = "complete.obs"),
+    
+    cor(core_data_cleaned$xg_for_avg_overall,
+        core_data_cleaned$shots_on_target,
+        use = "complete.obs"),
+    
+    cor(core_data_cleaned$xg_for_avg_overall,
+        core_data_cleaned$shots,
+        use = "complete.obs"),
+    
+    cor(core_data_cleaned$xg_for_avg_overall,
+        core_data_cleaned$points_per_game,
+        use = "complete.obs")
   )
 )
 
 xg_correlations
 
-{r}
+
+{r message=FALSE, warning=FALSE}
+#| label: xg-correlation-bar-chart
+#| echo: true
+#| code-fold: true
+#| fig-cap: "Correlation between xG and selected performance indicators"
+
 ggplot(xg_correlations, aes(x = reorder(relationship, correlation), y = correlation)) +
   geom_col() +
   coord_flip() +
@@ -94,22 +105,37 @@ ggplot(xg_correlations, aes(x = reorder(relationship, correlation), y = correlat
   ylim(0, 1) +
   theme_minimal()
 
+
 The bar chart compares the strength of the relationship between xG and selected performance indicators. A higher correlation means that the variable has a stronger positive relationship with xG.
 
-1.2 xG vs Goals Scored
+Since xG is designed to measure expected scoring performance, we expect the relationship between xG and goals scored to be one of the most meaningful comparisons. However, shots on target and points per game can also provide useful context about attacking and overall team performance.
 
-{r}
+### 1.2 xG vs Goals Scored
+
+The first direct relationship we analyze is xG and actual goals scored. This is the most natural comparison because xG is designed to estimate expected scoring performance.
+
+{r message=FALSE, warning=FALSE}
+#| label: xg-goals-correlation
+#| echo: true
+#| code-fold: true
+
 cor_xg_goals <- cor(
-  superlig_data$xg_for_avg_overall,
-  superlig_data$goals_scored_per_match,
+  core_data_cleaned$xg_for_avg_overall,
+  core_data_cleaned$goals_scored_per_match,
   use = "complete.obs"
 )
 
 cor_xg_goals
 
-{r}
+
+{r message=FALSE, warning=FALSE}
+#| label: xg-goals-scatter
+#| echo: true
+#| code-fold: true
+#| fig-cap: "Relationship between xG and goals scored per match"
+
 ggplot(
-  superlig_data,
+  core_data_cleaned,
   aes(x = xg_for_avg_overall, y = goals_scored_per_match)
 ) +
   geom_point(alpha = 0.7) +
@@ -122,22 +148,39 @@ ggplot(
   ) +
   theme_minimal()
 
-The scatter plot shows a positive relationship between xG and goals scored. Teams creating higher-quality chances generally score more goals. However, the relationship is not perfect because actual goals are affected by finishing quality, goalkeeper performance, defensive pressure, and randomness.
 
-1.3 xG vs Shots on Target
+The scatter plot shows a positive relationship between xG and goals scored. This means that teams creating higher-quality chances generally score more goals.
 
-{r}
+However, the relationship is not perfect. The points are not located exactly on a single straight line. This is expected because actual goals are affected by finishing quality, goalkeeper performance, defensive pressure, and randomness.
+
+Therefore, xG is useful for explaining scoring performance, but it should not be interpreted as a perfect predictor of goals.
+
+### 1.3 xG vs Shots on Target
+
+Next, we compare xG with shots on target. This relationship is useful because shots on target show how often a team produces direct scoring threats.
+
+{r message=FALSE, warning=FALSE}
+#| label: xg-shots-on-target-correlation
+#| echo: true
+#| code-fold: true
+
 cor_xg_sot <- cor(
-  superlig_data$xg_for_avg_overall,
-  superlig_data$shots_on_target,
+  core_data_cleaned$xg_for_avg_overall,
+  core_data_cleaned$shots_on_target,
   use = "complete.obs"
 )
 
 cor_xg_sot
 
-{r}
+
+{r message=FALSE, warning=FALSE}
+#| label: xg-shots-on-target-scatter
+#| echo: true
+#| code-fold: true
+#| fig-cap: "Relationship between xG and shots on target"
+
 ggplot(
-  superlig_data,
+  core_data_cleaned,
   aes(x = xg_for_avg_overall, y = shots_on_target)
 ) +
   geom_point(alpha = 0.7) +
@@ -150,22 +193,35 @@ ggplot(
   ) +
   theme_minimal()
 
-A positive relationship is expected because teams that create more dangerous chances usually also record more shots on target.
 
-1.4 xG vs Points per Game
+The relationship between xG and shots on target helps us understand whether teams with higher expected goals also produce more accurate attacking attempts.
 
-{r}
+### 1.4 xG vs Points per Game
+
+We also analyze the relationship between xG and points per game. This comparison is more indirect than the relationship between xG and goals because points are affected by both attacking and defensive performance.
+
+{r message=FALSE, warning=FALSE}
+#| label: xg-points-correlation
+#| echo: true
+#| code-fold: true
+
 cor_xg_points <- cor(
-  superlig_data$xg_for_avg_overall,
-  superlig_data$points_per_game,
+  core_data_cleaned$xg_for_avg_overall,
+  core_data_cleaned$points_per_game,
   use = "complete.obs"
 )
 
 cor_xg_points
 
-{r}
+
+{r message=FALSE, warning=FALSE}
+#| label: xg-points-scatter
+#| echo: true
+#| code-fold: true
+#| fig-cap: "Relationship between xG and points per game"
+
 ggplot(
-  superlig_data,
+  core_data_cleaned,
   aes(x = xg_for_avg_overall, y = points_per_game)
 ) +
   geom_point(alpha = 0.7) +
@@ -178,22 +234,33 @@ ggplot(
   ) +
   theme_minimal()
 
-The relationship between xG and points per game may be weaker than xG and goals because points depend on both attacking and defensive performance.
 
-1.5 xGA vs Goals Conceded
+### 1.5 xGA vs Goals Conceded
 
-{r}
+Finally, we analyze the defensive side by comparing xGA and goals conceded. xGA represents the quality of chances that a team allows its opponents to create.
+
+{r message=FALSE, warning=FALSE}
+#| label: xga-goals-conceded-correlation
+#| echo: true
+#| code-fold: true
+
 cor_xga_conceded <- cor(
-  superlig_data$xg_against_avg_overall,
-  superlig_data$goals_conceded_per_match,
+  core_data_cleaned$xg_against_avg_overall,
+  core_data_cleaned$goals_conceded_per_match,
   use = "complete.obs"
 )
 
 cor_xga_conceded
 
-{r}
+
+{r message=FALSE, warning=FALSE}
+#| label: xga-goals-conceded-scatter
+#| echo: true
+#| code-fold: true
+#| fig-cap: "Relationship between xGA and goals conceded per match"
+
 ggplot(
-  superlig_data,
+  core_data_cleaned,
   aes(x = xg_against_avg_overall, y = goals_conceded_per_match)
 ) +
   geom_point(alpha = 0.7) +
@@ -206,14 +273,18 @@ ggplot(
   ) +
   theme_minimal()
 
-The defensive analysis shows whether expected goals against is related to actual goals conceded.
 
-1.6 Why is the Correlation Not Equal to 1?
+### 1.6 Why is the Correlation Not Equal to 1?
 
 Although xG is related to goals and other performance indicators, the correlation is not expected to be exactly 1. This is because xG measures probability, not certainty.
 
-{r}
-ggplot(superlig_data, aes(y = goals_minus_xg)) +
+{r message=FALSE, warning=FALSE}
+#| label: goals-minus-xg-boxplot
+#| echo: true
+#| code-fold: true
+#| fig-cap: "Distribution of goals minus xG"
+
+ggplot(core_data_cleaned, aes(y = goals_minus_xg)) +
   geom_boxplot() +
   labs(
     title = "Distribution of Goals Minus xG",
@@ -221,8 +292,14 @@ ggplot(superlig_data, aes(y = goals_minus_xg)) +
   ) +
   theme_minimal()
 
-{r}
-superlig_data %>%
+
+{r message=FALSE, warning=FALSE}
+#| label: xg-over-under-performers
+#| echo: true
+#| code-fold: true
+#| fig-cap: "Largest differences between goals and xG"
+
+core_data_cleaned %>%
   arrange(desc(abs(goals_minus_xg))) %>%
   slice_head(n = 10) %>%
   mutate(team_season = paste(common_name, season, sep = " - ")) %>%
@@ -236,21 +313,25 @@ superlig_data %>%
   ) +
   theme_minimal()
 
-Section 1 Summary:xG is positively related to actual goals scored, shots on target, and points per game. However, the relationship is not perfect because xG measures chance quality, not guaranteed goals.
 
-<br> *** <br>
+> *Section 1 Summary:*
+> This section shows that xG is positively related to actual goals scored, shots on target, and points per game. The relationship between xG and actual performance is not perfect. xG measures chance quality, not guaranteed goals.
 
-Section 2 - xG Evolution and Finishing Performance in the Süper Lig
+<br>
+*
+<br>
 
-This section analyzes how expected goals evolved across recent Süper Lig seasons and examines the relationship between xG and actual goal-scoring performance.
+## Section 2 - xG Evolution and Finishing Performance in the Süper Lig
 
-2.1 Evolution of xG Accuracy
+This section analyzes how expected goals (xG) evolved across recent Süper Lig seasons and examines the relationship between xG and actual goal-scoring performance. 
 
-{r}
+### 2.1 Evolution of xG Accuracy
+
+{r message=FALSE, warning=FALSE}
 seasonal_xg_accuracy <- superlig_data %>%
   group_by(season_short) %>%
   summarize(
-    correlation = cor(xg_for_avg_overall, goals_scored_per_match, use = "complete.obs"),
+    correlation = cor(xg_for_avg_overall, goals_scored_per_match),
     .groups = "drop"
   )
 
@@ -263,11 +344,12 @@ seasonal_xg_accuracy %>%
   ylab("Correlation") +
   ggtitle("Evolution of xG Accuracy by Season")
 
-Analytical Insight: The relationship between xG and actual goals becomes stronger in recent seasons. However, the correlation never reaches 1 because xG is a probability-based metric, not a perfect prediction of goals.
 
-2.2 Why xG is not Perfect
+*Analytical Insight:* The relationship between xG and actual goals becomes noticeably stronger in recent seasons.
 
-{r}
+### 2.2 Why xG is not Perfect
+
+{r message=FALSE, warning=FALSE}
 last3seasons_data <- superlig_data %>%
   filter(season_short %in% c("23-24", "24-25", "25-26"))
 
@@ -282,11 +364,10 @@ last3seasons_data %>%
   ylab("Frequency") +
   ggtitle("Finishing Difference Distribution Last 3 Seasons")
 
-Analytical Insight: Some teams score more goals than their xG suggests, while others score fewer. Player finishing ability, goalkeeper saves, defensive pressure, and luck can all create differences between expected and actual goals.
 
-2.3 Shot Quality Evolution
+### 2.3 Shot Quality Evolution
 
-{r}
+{r message=FALSE, warning=FALSE}
 seasonal_shot_quality <- superlig_data %>%
   group_by(season_short) %>%
   summarize(
@@ -303,11 +384,10 @@ seasonal_shot_quality %>%
   ylab("Average xG per Shot") +
   ggtitle("Evolution of Shot Quality")
 
-Analytical Insight: This analysis helps us understand whether teams are creating better chances or simply taking more shots.
 
-2.4 Home Advantage and xG
+### 2.4 Home Advantage and xG
 
-{r}
+{r message=FALSE, warning=FALSE}
 home_away_xg <- superlig_data %>%
   group_by(season_short) %>%
   summarize(
@@ -338,17 +418,17 @@ home_away_long %>%
   ylab("Average xG per Match") +
   ggtitle("Home vs Away xG")
 
-Analytical Insight: Home teams generally generate higher xG than away teams, suggesting that home advantage still plays an important offensive role.
 
-Section 2 Key Takeaways:* Expected goals has a strong relationship with actual goals, but it is not a perfect predictor.* Finishing difference helps identify teams that score more or less than expected.* Shot quality analysis shows whether teams are creating efficient chances.* Home advantage remains important in attacking performance.
+<br>
+*
+<br>
 
-<br> *** <br>
+## Section 3: xG and Success in the Süper Lig
 
-Section 3: xG and Success in the Süper Lig
+By analyzing 8 seasons of data, we examine how often tactical systems (metrics) and individual brilliance (skill) intersect to crown a champion.
 
-The main objective of this section is to determine what truly drives success in the Turkish Süper Lig.
-
-{r}
+{r message=FALSE, warning=FALSE}
+# Creating xGD and Championship Status for Section 3
 analysis_data <- superlig_data %>%
   mutate(
     Season = season_short,
@@ -356,9 +436,11 @@ analysis_data <- superlig_data %>%
     is_champion = ifelse(league_position == 1, "Champion", "Other Teams")
   )
 
-3.1 What Drives Success? Offense vs. Defense
 
-{r}
+### 3.1 What Drives Success? (Offense vs. Defense)
+
+{r message=FALSE, warning=FALSE}
+# Correlation Analysis Plot
 correlation_df <- analysis_data %>%
   summarise(
     xG_Points = cor(xg_for_avg_overall, points_per_game, use = "complete.obs"),
@@ -370,33 +452,29 @@ correlation_df <- analysis_data %>%
 
 ggplot(correlation_df, aes(x = reorder(Metric, Strength), y = Correlation, fill = Metric)) +
   geom_bar(stat = "identity", width = 0.6) +
-  geom_text(
-    aes(label = round(Correlation, 2)),
-    hjust = ifelse(correlation_df$Correlation > 0, -0.2, 1.2),
-    size = 5,
-    fontface = "bold"
-  ) +
-  scale_fill_manual(values = c(
-    "xG_Points" = "#27ae60",
-    "xGA_Points" = "#e74c3c",
-    "xGD_Points" = "#2980b9"
-  )) +
-  scale_y_continuous(limits = c(-0.8, 1.2)) +
+  geom_text(aes(label = round(Correlation, 2)), 
+            hjust = ifelse(correlation_df$Correlation > 0, -0.2, 1.2), size = 5, fontface = "bold") +
+  scale_fill_manual(values = c("xG_Points" = "#27ae60", "xGA_Points" = "#e74c3c", "xGD_Points" = "#2980b9")) +
+  scale_y_continuous(limits = c(-0.8, 1.2)) + 
   coord_flip() +
-  labs(
-    title = "What Drives Success in the Süper Lig?",
-    subtitle = "Correlation between Points per Game and xG Metrics",
-    x = "Performance Metrics",
-    y = "Correlation Coefficient"
-  ) +
-  theme_minimal() +
+  labs(title = "What Drives Success in the Süper Lig?", 
+       subtitle = "Correlation between Points per Game and xG Metrics", 
+       x = "Performance Metrics", 
+       y = "Correlation Coefficient (r)") +
+  theme_minimal() + 
   theme(legend.position = "none")
 
-Analytical Insight: Expected Goal Difference is one of the strongest indicators of league success because it combines attacking production and defensive control.
 
-3.2 Champion Profiles
+*Analytical Insight:* The data confirms that while attacking and defending are both vital, the most decisive factor for league success is Expected Goal Difference (xGD). 
 
-{r}
+<br>
+*
+<br>
+
+### 3.2 Champion Profiles (The Structural DNA)
+
+{r message=FALSE, warning=FALSE, fig.width=10, fig.height=6}
+# Quadrant Plot by Season
 mean_xg <- mean(analysis_data$xg_for_avg_overall, na.rm = TRUE)
 mean_xga <- mean(analysis_data$xg_against_avg_overall, na.rm = TRUE)
 
@@ -406,49 +484,48 @@ ggplot(analysis_data, aes(x = xg_against_avg_overall, y = xg_for_avg_overall)) +
   geom_vline(xintercept = mean_xga, linetype = "dashed", color = "gray50", alpha = 0.5) +
   scale_color_manual(values = c("Champion" = "#f1c40f", "Other Teams" = "#2c3e50")) +
   scale_size_manual(values = c("Champion" = 3.5, "Other Teams" = 1.5)) +
-  scale_x_reverse() +
-  facet_wrap(~ Season, ncol = 4) +
-  labs(
-    title = "Süper Lig Team Profiles by Season",
-    x = "xGA per Match Lower is Better",
-    y = "xG per Match",
-    color = "Status",
-    size = "Status"
-  ) +
+  scale_x_reverse() + 
+  facet_wrap(~ Season, ncol = 4) + 
+  labs(title = "Süper Lig Team Profiles (Season by Season)", 
+       subtitle = "Top Right Quadrant: Above Average in Both Offense and Defense", 
+       x = "xGA per Match (Lower is Better)", 
+       y = "xG per Match", 
+       color = "Status", 
+       size = "Status") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
-Analytical Insight: Champions usually combine above-average attacking production with strong defensive control.
 
-3.3 Champion vs Challengers
+*Analytical Insight:* In the vast majority of seasons, the champion occupies the top-right quadrant. This represents a "systemic dominance."
 
-{r}
+<br>
+*
+<br>
+
+### 3.3 The Title Race: When Skill Defies Statistics
+
+{r message=FALSE, warning=FALSE}
+# Top 4 Comparison
 top4_data <- analysis_data %>%
   filter(league_position <= 4) %>%
   mutate(Position = case_when(
-    league_position == 1 ~ "1st Champion",
+    league_position == 1 ~ "1st (Champion)",
     league_position == 2 ~ "2nd",
     league_position == 3 ~ "3rd",
     league_position == 4 ~ "4th"
   )) %>%
-  mutate(Position = factor(Position, levels = c("1st Champion", "2nd", "3rd", "4th")))
+  mutate(Position = factor(Position, levels = c("1st (Champion)", "2nd", "3rd", "4th")))
 
 ggplot(top4_data, aes(x = Season, y = xGD, fill = Position)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.8) +
-  scale_fill_manual(values = c(
-    "1st Champion" = "#f1c40f",
-    "2nd" = "#bdc3c7",
-    "3rd" = "#cd7f32",
-    "4th" = "#34495e"
-  )) +
-  labs(
-    title = "Champion vs Challengers",
-    subtitle = "xGD Comparison",
-    x = "Season",
-    y = "xGD per Match",
-    fill = "League Finish"
-  ) +
-  theme_minimal() +
+  scale_fill_manual(values = c("1st (Champion)" = "#f1c40f", "2nd" = "#bdc3c7", "3rd" = "#cd7f32", "4th" = "#34495e")) +
+  labs(title = "Comparing the Elite: Champion vs. Challengers", 
+       subtitle = "xGD (Expected Goal Difference) Comparison", 
+       x = "Season", 
+       y = "xGD per Match (xG - xGA)",
+       fill = "League Finish") +
+  theme_minimal() + 
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 
-Final Insight: xG and xGD are powerful indicators of team strength, but football outcomes are still influenced by finishing skill, goalkeeper performance, tactical context, and randomness.
+
+> *Key Takeaway:* "Quality Hands and Quality Feet" matter. Historic goalkeeping performances (elite hands) and ruthless, clinical finishing (elite feet) can occasionally defy mathematical probability.
