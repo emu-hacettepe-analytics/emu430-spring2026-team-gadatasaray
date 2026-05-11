@@ -3,36 +3,17 @@ project:
   output-dir: docs
 
 website:
-  title: "xxx' Project Lab"
+  title: "Super Lig xG Analysis"
   navbar:
-    search: true
     left:
-      - text: Home
-        href: index.qmd
-      - text: Data
-        href: data.qmd
-      - text: Analysis
-        href: analysis.qmd
+      - href: index.qmd
+        text: Home
+      - href: data.qmd
+        text: Data
+      - href: analysis.qmd
+        text: Analysis
 
-            
-    tools:
-      - icon: github
-        href: https://twitter.com
-
-  page-navigation: true
-  back-to-top-navigation: true
-  page-footer:
-    center: "Hacettepe IE - EMU430 - Spring 2026" 
-    border: true
 format:
   html:
     toc: true
-    toc-location: left
-    theme: 
-      light: simplex 
-      dark: cyborg
-    css: styles.css
-
-
-editor: visual
-
+    code-fold: true

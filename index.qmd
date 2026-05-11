@@ -1,24 +1,27 @@
 ---
-title: "Team XXX"
-sidebar: false 
+title: "Super Lig xG Analysis"
 ---
 
-This is our project webpage.
+## Project Overview
 
-Please stay tuned to follow our project activities.
+This project analyzes the relationship between expected goals and match performance indicators in the Turkish Süper Lig.
 
-This is our template.
+Our main focus is to understand how xG is related to goals scored, goals conceded, shots on target, and points per game.
 
-# Team Members
+## Team Members
 
-1.  [Anderson Talisca](https://tr.wikipedia.org/wiki/Talisca)
+-   Necati Berkay Vural
+-   Ömer Faruk Okur
+-   Ulaş Utku Bedel
 
-2.  [N'Golo Kanté](https://en.wikipedia.org/wiki/N%27Golo_Kant%C3%A9)
+## Key Takeaways
 
-3.  [Mattéo Guendouzi](https://en.wikipedia.org/wiki/Matt%C3%A9o_Guendouzi)
+-   Expected Goals is a useful metric for measuring the quality of chances created by teams.
 
-4.  [Marco Asensio](https://tr.wikipedia.org/wiki/Marco_Asensio)
+-   xG is positively related to actual goals scored, but the relationship is not perfect.
 
-# Project Topic
+-   xGA is useful for evaluating defensive performance because it is related to goals conceded.
 
-# Data Set
+-   
+
+    ## Differences between xG and actual goals can be explained by finishing quality, goalkeeper performance, tactical factors, and randomness.
