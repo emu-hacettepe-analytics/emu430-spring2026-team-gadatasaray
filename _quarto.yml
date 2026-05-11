@@ -1,10 +1,11 @@
 project:
   type: website
-  output-dir: docs  # Bu satır çok kritik, çıktıları docs klasörüne atar
+  output-dir: docs
 
 website:
   title: "Süper Lig xG Analysis"
   navbar:
+    background: primary
     left:
       - href: index.qmd
         text: Home
@@ -16,5 +17,4 @@ website:
 format:
   html:
     theme: cosmo
-    css: styles.css
     toc: true
