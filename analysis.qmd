@@ -9,12 +9,39 @@ format:
 ---
 
 ```{r setup, message=FALSE, warning=FALSE}
+#| label: master-data-loading
+#| echo: true
+#| code-fold: true
+
 # TÜM PROJE İÇİN GEREKLİ ORTAK KÜTÜPHANELER
 library(readr)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(knitr)
+
+# BÜTÜN CSV DOSYALARININ TEK MERKEZDEN OKUNMASI
+s18 <- read_csv("turkey-super-lig-teams-2018-to-2019-stats.csv", show_col_types = FALSE)
+s19 <- read_csv("turkey-super-lig-teams-2019-to-2020-stats.csv", show_col_types = FALSE)
+s20 <- read_csv("turkey-super-lig-teams-2020-to-2021-stats.csv", show_col_types = FALSE)
+s21 <- read_csv("turkey-super-lig-teams-2021-to-2022-stats.csv", show_col_types = FALSE)
+s22 <- read_csv("turkey-super-lig-teams-2022-to-2023-stats.csv", show_col_types = FALSE)
+s23 <- read_csv("turkey-super-lig-teams-2023-to-2024-stats.csv", show_col_types = FALSE)
+s24 <- read_csv("turkey-super-lig-teams-2024-to-2025-stats.csv", show_col_types = FALSE)
+s25 <- read_csv("turkey-super-lig-teams-2025-to-2026-stats.csv", show_col_types = FALSE)
+
+# ORTAK VERİ SETİNİN OLUŞTURULMASI
+superlig_data <- bind_rows(s18, s19, s20, s21, s22, s23, s24, s25) %>%
+  mutate(
+    season_short = paste0(substr(season, 3, 4), "-", substr(season, 8, 9)),
+    finishing_diff = goals_scored_per_match - xg_for_avg_overall,
+    total_xg = xg_for_avg_overall * matches_played,
+    shot_quality = total_xg / shots
+  )
+
+# BERKAY'IN KODLARI İÇİN KÖPRÜ (Eksik .RData dosyası yerine CSV'leri kullanıyoruz)
+core_data_cleaned <- superlig_data %>%
+  mutate(goals_minus_xg = goals_scored_per_match - xg_for_avg_overall)
 ```
 
 ## Section 1 – Understanding Expected Goals and Match Performance
@@ -22,15 +49,6 @@ library(knitr)
 Expected Goals, commonly known as xG, is a football analytics metric that estimates the quality of chances created by a team. It does not directly measure the final score. Instead, it shows how many goals a team would be expected to score based on the quality of its chances.
 
 In this section, we analyze how xG is related to different performance indicators in the Turkish Süper Lig.
-
-```{r message=FALSE, warning=FALSE}
-#| label: load-cleaned-data
-#| echo: true
-#| code-fold: true
-
-# Berkay'ın veri seti yüklemesi
-load("data/processed/super_lig_xg_core_data_cleaned.RData")
-```
 
 ### 1.1 Correlation Between xG and Performance Indicators
 
@@ -178,8 +196,6 @@ ggplot(
 
 The relationship between xG and shots on target helps us understand whether teams with higher expected goals also produce more accurate attacking attempts.
 
-A positive relationship is expected because teams that create more dangerous chances usually also record more shots on target. However, this relationship may not be perfect because xG depends on chance quality, while shots on target mainly counts whether the shot was on target.
-
 ### 1.4 xG vs Points per Game
 
 We also analyze the relationship between xG and points per game. This comparison is more indirect than the relationship between xG and goals because points are affected by both attacking and defensive performance.
@@ -218,10 +234,6 @@ ggplot(
   ) +
   theme_minimal()
 ```
-
-The relationship between xG and points per game shows whether teams that create better chances also collect more points.
-
-This relationship may be weaker than the relationship between xG and goals scored. This is normal because points per game depends not only on attacking performance, but also on defensive strength, match results, opponent quality, and consistency across the season.
 
 ### 1.5 xGA vs Goals Conceded
 
@@ -262,17 +274,9 @@ ggplot(
   theme_minimal()
 ```
 
-The defensive analysis shows whether expected goals against is related to actual goals conceded. A positive relationship means that teams allowing higher-quality chances generally concede more goals.
-
-However, this relationship is also not perfect. Goalkeeper performance, opponent finishing quality, defensive actions, and randomness can create differences between expected goals against and actual goals conceded.
-
 ### 1.6 Why is the Correlation Not Equal to 1?
 
 Although xG is related to goals and other performance indicators, the correlation is not expected to be exactly 1. This is because xG measures probability, not certainty.
-
-For example, a team can create high-quality chances but fail to score because of poor finishing or strong goalkeeper performance. Another team can score from low-quality chances because of excellent finishing or defensive mistakes. Therefore, actual goals may differ from expected goals.
-
-In simple terms, xG explains chance quality, but it does not fully explain every detail of football. Match outcomes are also affected by finishing skill, goalkeeper performance, tactical decisions, pressure, opponent quality, and randomness.
 
 ```{r message=FALSE, warning=FALSE}
 #| label: goals-minus-xg-boxplot
@@ -288,8 +292,6 @@ ggplot(core_data_cleaned, aes(y = goals_minus_xg)) +
   ) +
   theme_minimal()
 ```
-
-The boxplot shows that actual goals are not always equal to xG. Some teams scored more than expected, while others scored less than expected. This variation explains why the correlation between xG and goals is not perfect.
 
 ```{r message=FALSE, warning=FALSE}
 #| label: xg-over-under-performers
@@ -312,16 +314,8 @@ core_data_cleaned %>%
   theme_minimal()
 ```
 
-This chart highlights the teams with the largest differences between actual goals and expected goals. Positive values indicate teams that scored more than expected, while negative values indicate teams that scored less than expected.
-
-These differences support the idea that xG is an informative metric, but actual football outcomes still include finishing quality, goalkeeper performance, and random variation.
-
 > **Section 1 Summary:**
-> This section shows that xG is positively related to actual goals scored, shots on target, and points per game. Among these variables, goals scored is the most direct comparison because xG is designed to measure expected scoring performance.
-> 
-> The analysis also shows that xGA is related to goals conceded. This means expected goals can be useful not only for attacking analysis, but also for defensive evaluation.
-> 
-> However, the relationship between xG and actual performance is not perfect. xG measures chance quality, not guaranteed goals. Therefore, finishing quality, goalkeeper performance, tactical decisions, opponent quality, and randomness can create differences between expected and actual outcomes.
+> This section shows that xG is positively related to actual goals scored, shots on target, and points per game. The relationship between xG and actual performance is not perfect. xG measures chance quality, not guaranteed goals.
 
 <br>
 ***
@@ -329,38 +323,9 @@ These differences support the idea that xG is an informative metric, but actual 
 
 ## Section 2 - xG Evolution and Finishing Performance in the Süper Lig
 
-```{r message=FALSE, warning=FALSE}
-#| label: prepare-section-2-data
-#| echo: true
-#| code-fold: true
-
-# Ulaş ve Senin veri seti yüklemen
-s18 <- read_csv("turkey-super-lig-teams-2018-to-2019-stats.csv", show_col_types = FALSE)
-s19 <- read_csv("turkey-super-lig-teams-2019-to-2020-stats.csv", show_col_types = FALSE)
-s20 <- read_csv("turkey-super-lig-teams-2020-to-2021-stats.csv", show_col_types = FALSE)
-s21 <- read_csv("turkey-super-lig-teams-2021-to-2022-stats.csv", show_col_types = FALSE)
-s22 <- read_csv("turkey-super-lig-teams-2022-to-2023-stats.csv", show_col_types = FALSE)
-s23 <- read_csv("turkey-super-lig-teams-2023-to-2024-stats.csv", show_col_types = FALSE)
-s24 <- read_csv("turkey-super-lig-teams-2024-to-2025-stats.csv", show_col_types = FALSE)
-s25 <- read_csv("turkey-super-lig-teams-2025-to-2026-stats.csv", show_col_types = FALSE)
-
-superlig_data <- bind_rows(
-  s18, s19, s20, s21,
-  s22, s23, s24, s25
-) %>%
-  mutate(
-    season_short = paste0(substr(season, 3, 4), "-", substr(season, 8, 9)),
-    finishing_diff = goals_scored_per_match - xg_for_avg_overall,
-    total_xg = xg_for_avg_overall * matches_played,
-    shot_quality = total_xg / shots
-  )
-```
-
-This section analyzes how expected goals (xG) evolved across recent Süper Lig seasons and examines the relationship between xG and actual goal-scoring performance. The analysis focuses on xG accuracy, finishing differences, shot quality, and home advantage in order to better understand both the strengths and limitations of xG as a predictive metric in football analytics.
+This section analyzes how expected goals (xG) evolved across recent Süper Lig seasons and examines the relationship between xG and actual goal-scoring performance. 
 
 ### 2.1 Evolution of xG Accuracy
-
-To understand whether expected goals consistently explains attacking performance in the Süper Lig, we examine the correlation between xG per match and goals scored per match across different seasons.
 
 ```{r message=FALSE, warning=FALSE}
 seasonal_xg_accuracy <- superlig_data %>%
@@ -380,11 +345,9 @@ seasonal_xg_accuracy %>%
   ggtitle("Evolution of xG Accuracy by Season")
 ```
 
-**Analytical Insight:** The relationship between xG and actual goals becomes noticeably stronger in recent seasons, with correlation values rising above 0.9 after the 2022–23 season. However, the correlation never reaches 1 because xG is a probability-based metric, not a perfect prediction of goals. Actual goals are still affected by finishing quality, goalkeeper performance, tactical context, and randomness.
+**Analytical Insight:** The relationship between xG and actual goals becomes noticeably stronger in recent seasons.
 
 ### 2.2 Why xG is not Perfect
-
-Although expected goals strongly correlates with actual goal scoring, xG represents probability rather than certainty. It estimates how likely similar shots are to become goals over the long run rather than predicting the exact outcome of every individual attempt.
 
 ```{r message=FALSE, warning=FALSE}
 last3seasons_data <- superlig_data %>%
@@ -402,11 +365,7 @@ last3seasons_data %>%
   ggtitle("Finishing Difference Distribution Last 3 Seasons")
 ```
 
-**Analytical Insight:** The distribution shows that some teams score more goals than their xG suggests, while others score fewer. This happens because xG measures the quality of chances, but it cannot fully capture every detail of real match situations. Player finishing ability, goalkeeper saves, defensive pressure, and luck can all create differences between expected and actual goals.
-
 ### 2.3 Shot Quality Evolution
-
-Has the average quality of shots changed over time in the Süper Lig? To investigate this, we analyze average expected goals per shot across seasons.
 
 ```{r message=FALSE, warning=FALSE}
 seasonal_shot_quality <- superlig_data %>%
@@ -426,11 +385,7 @@ seasonal_shot_quality %>%
   ggtitle("Evolution of Shot Quality")
 ```
 
-**Analytical Insight:** This analysis helps us understand whether teams are creating better chances or simply taking more shots. If average xG per shot decreases, it may suggest that teams are attempting more difficult shots. If it increases, it may indicate more efficient chance creation and better shot selection.
-
 ### 2.4 Home Advantage and xG
-
-To examine whether home advantage affects attacking production, we compare average xG generated by home and away teams across seasons.
 
 ```{r message=FALSE, warning=FALSE}
 home_away_xg <- superlig_data %>%
@@ -464,23 +419,13 @@ home_away_long %>%
   ggtitle("Home vs Away xG")
 ```
 
-**Analytical Insight:** If home teams consistently generate higher xG than away teams, this suggests that home advantage still plays an important offensive role. The xG difference can reflect crowd effect, familiarity with the stadium, tactical confidence, and stronger attacking pressure at home.
-
-> **Section 2 Key Takeaways:**
-> 
-> * Expected goals has a strong relationship with actual goals, but it is not a perfect predictor because football outcomes include uncertainty.
-> * A correlation above 0.9 indicates a very strong relationship, but the remaining gap from 1 shows the effect of finishing quality, goalkeeper performance, tactical context, and randomness.
-> * Finishing difference helps identify teams that score more or less than expected based on the quality of their chances.
-> * Shot quality analysis shows whether teams are creating efficient chances or relying on lower-quality attempts.
-> * Home teams generally produce higher xG, showing that home advantage remains important in attacking performance.
-
 <br>
 ***
 <br>
 
 ## Section 3: xG and Success in the Süper Lig
 
-The main objective of this section is to determine what truly drives success in the Turkish Süper Lig. While mathematical models like Expected Goals (xG) offer a powerful lens to view performance, football remains a sport of human skill and unpredictability. By analyzing 8 seasons of data, we examine how often tactical systems (metrics) and individual brilliance (skill) intersect to crown a champion.
+By analyzing 8 seasons of data, we examine how often tactical systems (metrics) and individual brilliance (skill) intersect to crown a champion.
 
 ```{r message=FALSE, warning=FALSE}
 # Creating xGD and Championship Status for Section 3
@@ -493,8 +438,6 @@ analysis_data <- superlig_data %>%
 ```
 
 ### 3.1 What Drives Success? (Offense vs. Defense)
-
-We analyzed the correlation between Points per Game and Expected Metrics (xG, xGA, xGD).
 
 ```{r message=FALSE, warning=FALSE}
 # Correlation Analysis Plot
@@ -522,16 +465,13 @@ ggplot(correlation_df, aes(x = reorder(Metric, Strength), y = Correlation, fill 
   theme(legend.position = "none")
 ```
 
-**Analytical Insight:**
-The data confirms that while attacking and defending are both vital, the most decisive factor for league success is Expected Goal Difference (`xGD`). It shows that over the long term, a balanced system that produces quality chances while restricting the opponent's quality is the most reliable way to accumulate points.
+**Analytical Insight:** The data confirms that while attacking and defending are both vital, the most decisive factor for league success is Expected Goal Difference (`xGD`). 
 
 <br>
 ***
 <br>
 
 ### 3.2 Champion Profiles (The Structural DNA)
-
-By mapping the offensive (xG) and defensive (xGA) metrics season by season, we can see where champions typically reside.
 
 ```{r message=FALSE, warning=FALSE, fig.width=10, fig.height=6}
 # Quadrant Plot by Season
@@ -556,16 +496,13 @@ ggplot(analysis_data, aes(x = xg_against_avg_overall, y = xg_for_avg_overall)) +
   theme(legend.position = "bottom")
 ```
 
-**Analytical Insight:**
-In the vast majority of seasons, the champion occupies the top-right quadrant. This represents a "systemic dominance." However, notice the variance in certain years where the champion is not the furthest to the right or top, hinting that tactical systems are only part of the story.
+**Analytical Insight:** In the vast majority of seasons, the champion occupies the top-right quadrant. This represents a "systemic dominance."
 
 <br>
 ***
 <br>
 
 ### 3.3 The Title Race: When Skill Defies Statistics
-
-Does the team with the best statistical system always win? This chart compares the xGD of the Champion against the 2nd, 3rd, and 4th place finishers.
 
 ```{r message=FALSE, warning=FALSE}
 # Top 4 Comparison
@@ -591,7 +528,4 @@ ggplot(top4_data, aes(x = Season, y = xGD, fill = Position)) +
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-**Analytical Insight:**
-While the champion usually holds the highest xGD, the **2021-2022 season** serves as a vital lesson in football analysis. Statistics are not absolute. In that season, the runner-up had a superior tactical process (higher xGD), but the champion possessed **elite individual quality** that models cannot fully capture. 
-
-> **Key Takeaway:** "Quality Hands and Quality Feet" matter. Historic goalkeeping performances (elite hands) and ruthless, clinical finishing (elite feet) can occasionally defy mathematical probability. A high xGD proves a team has a strong tactical foundation, but elite individual talent is what ultimately converts "expected" goals into "real" championship trophies.
+> **Key Takeaway:** "Quality Hands and Quality Feet" matter. Historic goalkeeping performances (elite hands) and ruthless, clinical finishing (elite feet) can occasionally defy mathematical probability.
