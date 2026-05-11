@@ -1,9 +1,9 @@
 project:
   type: website
-  output-dir: docs
+  output-dir: docs  # Bu satır çok kritik, çıktıları docs klasörüne atar
 
 website:
-  title: "Super Lig xG Analysis"
+  title: "Süper Lig xG Analysis"
   navbar:
     left:
       - href: index.qmd
@@ -15,5 +15,6 @@ website:
 
 format:
   html:
+    theme: cosmo
+    css: styles.css
     toc: true
-    code-fold: true
