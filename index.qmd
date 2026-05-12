@@ -8,11 +8,18 @@ This project analyzes the relationship between expected goals and match performa
 
 Our main focus is to understand how xG is related to goals scored, goals conceded, shots on target, and points per game.
 
+## Project Video
+
+<video width="100%" controls>
+  <source src="media/teaser.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 ## Team Members
 
-- [Necati Berkay Vural](https://nberkayvural.github.io/emu430-spring2026-nberkayvural/)
+- [Necati Berkay Vural](https://emu-hacettepe-analytics.github.io/emu430-spring2026-nberkayvural/about.html)
 - [Ömer Faruk Okur](https://github.com/emu-hacettepe-analytics/emu430-spring2026-omerokur06min)
-- [Ulaş Utku Bedel](https://github.com/emu-hacettepe-analytics/emu430-spring2026-ulasbedel)
+- [Ulaş Utku Bedel](https://emu-hacettepe-analytics.github.io/emu430-spring2026-ulasbedel/)
 
 ## Key Takeaways
 

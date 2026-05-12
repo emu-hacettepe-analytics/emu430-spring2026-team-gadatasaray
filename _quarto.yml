@@ -3,9 +3,8 @@ project:
   output-dir: docs
 
 website:
-  title: "Süper Lig xG Analysis"
+  title: "Super Lig xG Analysis"
   navbar:
-    background: primary
     left:
       - href: index.qmd
         text: Home
@@ -17,4 +16,6 @@ website:
 format:
   html:
     theme: cosmo
+    css: styles.css
     toc: true
+    code-fold: true
